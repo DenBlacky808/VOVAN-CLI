@@ -44,3 +44,13 @@ docker compose up --build vovan-worker
 ```
 
 См. `docs/runbook.md` и `docs/architecture.md`.
+
+## Live API контракт (VLADCHER_ru worker API)
+
+VOVAN worker использует только следующие endpoint'ы:
+
+- `GET /api/vovan/ocr/jobs/next/`
+- `GET /api/vovan/ocr/jobs/<job_id>/download/`
+- `POST /api/vovan/ocr/jobs/<job_id>/complete/`
+- `POST /api/vovan/ocr/jobs/<job_id>/fail/`
+- `GET /api/vovan/ocr/jobs/<job_id>/status/`

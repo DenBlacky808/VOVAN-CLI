@@ -19,11 +19,23 @@ def run_worker(settings: Settings) -> dict:
     )
 
     claim = client.claim_next_job()
+    if claim is None:
+        return {
+            "status": "ok",
+            "mode": settings.mode,
+            "dry_run": settings.dry_run,
+            "message": "No job available",
+            "claim_result": None,
+        }
+
+    job_id = claim.get("job_id") or claim.get("id")
+
     return {
         "status": "ok",
         "mode": settings.mode,
         "dry_run": settings.dry_run,
         "claim_result": claim,
+        "job_id": job_id,
     }
 
 
