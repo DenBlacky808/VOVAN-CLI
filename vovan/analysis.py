@@ -5,6 +5,7 @@ from collections.abc import Iterable
 
 
 _WHITESPACE_RE = re.compile(r"\s+")
+_LEADING_PAGE_MARKERS_RE = re.compile(r"^(?:-+\s*page\s+\d+\s*-+\s*)+", re.IGNORECASE)
 
 
 def normalize_ocr_text(text: str) -> str:
@@ -20,14 +21,15 @@ def _contains_any(text: str, keywords: Iterable[str]) -> bool:
     return any(keyword in text for keyword in keywords)
 
 
+def _contains_word(text: str, word: str) -> bool:
+    return bool(re.search(rf"(?<!\w){re.escape(word)}(?!\w)", text))
+
+
 def classify_document(text: str) -> str:
     normalized = normalize_ocr_text(text).lower()
 
     if not normalized:
         return "unknown"
-
-    if _contains_any(normalized, ("жилкомсервис", " жкс", "управляющая организация")):
-        return "housing_management_document"
 
     if _contains_any(normalized, ("мчс", "пожар", "эвакуац")):
         return "mchs_document"
@@ -41,13 +43,25 @@ def classify_document(text: str) -> str:
     if _contains_any(normalized, ("договор", "стороны", "предмет договора", "соглашение")):
         return "contract_or_agreement"
 
-    if _contains_any(normalized, ("бланк решения", "за", "против", "воздержался")) and (
-        "голос" in normalized or "собра" in normalized
-    ):
+    has_ballot_header = "бланк решения" in normalized
+    has_vote_options = all(_contains_word(normalized, option) for option in ("за", "против", "воздержался"))
+    if (has_ballot_header or has_vote_options) and ("голос" in normalized or "собра" in normalized):
         return "voting_ballot"
 
-    if _contains_any(normalized, ("общее собрание", "повестка", "голосование")):
+    if _contains_any(
+        normalized,
+        (
+            "общее собрание",
+            "собрание собственников",
+            "повестка",
+            "голосование",
+            "внеочередное общее собрание",
+        ),
+    ):
         return "meeting_notice"
+
+    if _contains_any(normalized, ("жилкомсервис", " жкс", "управляющая организация")):
+        return "housing_management_document"
 
     if _contains_any(normalized, ("рассмотрев обращение", "сообщаем", "на ваше обращение")):
         return "official_response"
@@ -71,11 +85,13 @@ def _build_title(normalized: str, document_type: str) -> str:
     if not normalized:
         return "Без названия"
 
-    first_sentence = re.split(r"[.!?]\s+", normalized, maxsplit=1)[0].strip(" -:;")
+    title_source = _LEADING_PAGE_MARKERS_RE.sub("", normalized).strip()
+
+    first_sentence = re.split(r"[.!?]\s+", title_source, maxsplit=1)[0].strip(" -:;")
     if first_sentence:
         return first_sentence[:120]
 
-    fallback = normalized[:120].strip()
+    fallback = title_source[:120].strip()
     if fallback:
         return fallback
 

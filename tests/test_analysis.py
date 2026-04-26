@@ -11,6 +11,20 @@ def test_meeting_notice_classified_correctly() -> None:
     assert classify_document(text) == "meeting_notice"
 
 
+def test_meeting_notice_takes_precedence_over_housing_management_document() -> None:
+    text = """
+    Сообщение о проведении внеочередного Общего собрания собственников помещений.
+    Повестка собрания и порядок голосования указаны ниже.
+    Уведомление размещено через Жилкомсервис №1.
+    """
+    assert classify_document(text) == "meeting_notice"
+
+
+def test_housing_management_document_without_meeting_markers() -> None:
+    text = "Управляющая организация Жилкомсервис №1 сообщает о графике работ в доме."
+    assert classify_document(text) == "housing_management_document"
+
+
 def test_voting_ballot_classified_correctly() -> None:
     text = "Бланк решения собственника: голосование по вопросам. Варианты: за, против, воздержался."
     assert classify_document(text) == "voting_ballot"
@@ -34,3 +48,10 @@ def test_build_document_analysis_contains_required_fields() -> None:
         "document_title",
         "short_summary",
     }
+
+
+def test_build_document_analysis_title_strips_leading_page_marker() -> None:
+    text = "--- PAGE 1 --- Сообщение о проведении внеочередного Общего собрания собственников помещений."
+    data = build_document_analysis(text)
+    assert not data["document_title"].startswith("PAGE 1")
+    assert data["document_title"].startswith("Сообщение")
