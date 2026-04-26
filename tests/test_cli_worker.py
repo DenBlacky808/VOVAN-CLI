@@ -15,6 +15,7 @@ def _settings() -> Settings:
         allowed_extensions={".txt"},
         max_file_size_mb=1,
         dry_run=True,
+        ocr_engine="placeholder",
     )
 
 
