@@ -150,3 +150,12 @@ def test_run_ocr_tesseract_missing_requested_language_falls_back_safely(monkeypa
     assert result["engine"] == "placeholder"
     assert result["engine_requested"] == "tesseract"
     assert "not installed" in result["engine_warning"]
+
+
+def test_run_ocr_adds_analysis_fields_and_keeps_raw_result_text() -> None:
+    result = run_ocr("/tmp/demo.pdf", "placeholder")
+    assert result["result_text"] == "placeholder OCR result"
+    assert result["normalized_text"] == "placeholder OCR result"
+    assert result["document_type"] == "unknown"
+    assert "document_title" in result
+    assert "short_summary" in result

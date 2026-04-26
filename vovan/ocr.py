@@ -7,6 +7,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Protocol
 
+from vovan.analysis import build_document_analysis
+
 DEFAULT_OCR_ENGINE = "placeholder"
 SUPPORTED_OCR_ENGINES = {"placeholder", "tesseract"}
 TESSERACT_SUPPORTED_SUFFIXES = {".png", ".jpg", ".jpeg", ".tiff", ".tif", ".bmp", ".webp"}
@@ -240,10 +242,15 @@ def run_ocr(
         fallback["engine_warning"] = (
             f"Engine '{engine.name}' failed or unsupported for this file ({exc}); fallback to 'placeholder'."
         )
+        fallback.update(build_document_analysis(fallback.get("result_text", "")))
         return fallback
 
     result["engine_requested"] = requested
     result["engine"] = engine.name
+
+    analysis = build_document_analysis(result.get("result_text", ""))
+    result.update(analysis)
+
     if warning:
         result["engine_warning"] = warning
     return result
