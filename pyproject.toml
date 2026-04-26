@@ -18,6 +18,11 @@ dev = [
 [project.scripts]
 vovan = "vovan.cli:main"
 
+
+[tool.setuptools.packages.find]
+include = ["vovan*"]
+exclude = ["data*", "logs*", "reports*", "tests*", "docs*"]
+
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
