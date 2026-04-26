@@ -10,3 +10,14 @@ reports/*
 logs/*
 !reports/.gitkeep
 !logs/.gitkeep
+
+# Local OCR samples / private documents
+/data/*.pdf
+/data/*.jpg
+/data/*.jpeg
+/data/*.png
+
+# Local secrets
+.env
+*.env
+.env.*

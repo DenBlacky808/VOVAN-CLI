@@ -7,8 +7,9 @@
 - Локальный worker (macOS/Hackintosh first, Linux later).
 - Не веб-сайт, не замена VLADCHER_ru.
 - Без входящих соединений.
-- OCR пока placeholder (без тяжёлой модели).
-- Engine переключается через `VOVAN_OCR_ENGINE` (`placeholder` по умолчанию, `tesseract` запланирован).
+- Worker OCR по умолчанию остаётся placeholder.
+- Локальный image OCR CLI уже умеет извлекать реальный текст через Tesseract.
+- Engine worker переключается через `VOVAN_OCR_ENGINE` (`placeholder` по умолчанию, `tesseract` для smoke/checkpoint).
 
 ## Быстрый старт
 
@@ -19,6 +20,38 @@ make doctor
 make preflight SAMPLE=./data/sample.txt
 make ocr SAMPLE=./data/sample.txt
 ```
+
+## Local image OCR CLI
+
+Самый маленький локальный путь для macOS/Hackintosh: системный Tesseract CLI без server API и без PDF pipeline.
+
+Install:
+
+```bash
+brew install tesseract
+python3 -m pip install -e ".[dev]"
+```
+
+Smoke test:
+
+```bash
+python3 -m vovan.local_ocr /path/to/file.png
+# or, after install:
+vovan-ocr-file /path/to/file.jpg
+```
+
+Supported formats:
+
+- `.png`
+- `.jpg`
+- `.jpeg`
+
+Known limitations:
+
+- Requires `tesseract` on `PATH`; missing dependency exits non-zero with an install hint.
+- Empty OCR output exits non-zero instead of returning placeholder text.
+- PDF is intentionally not supported by this CLI.
+- OCR quality depends on image clarity and installed Tesseract language packs.
 
 ## CLI команды
 
