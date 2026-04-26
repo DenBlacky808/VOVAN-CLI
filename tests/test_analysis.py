@@ -20,6 +20,20 @@ def test_meeting_notice_takes_precedence_over_housing_management_document() -> N
     assert classify_document(text) == "meeting_notice"
 
 
+def test_meeting_notice_takes_precedence_over_contract_when_strong_markers_exist() -> None:
+    text = """
+    Сообщение о проведении внеочередного Общего собрания собственников помещений.
+    Повестка общего собрания включает очно-заочное голосование.
+    Основание: договор управления с Жилкомсервис №1.
+    """
+    assert classify_document(text) == "meeting_notice"
+
+
+def test_contract_or_agreement_without_meeting_markers() -> None:
+    text = "Договор. Стороны согласовали предмет договора и порядок исполнения обязательств."
+    assert classify_document(text) == "contract_or_agreement"
+
+
 def test_housing_management_document_without_meeting_markers() -> None:
     text = "Управляющая организация Жилкомсервис №1 сообщает о графике работ в доме."
     assert classify_document(text) == "housing_management_document"

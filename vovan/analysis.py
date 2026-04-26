@@ -40,25 +40,25 @@ def classify_document(text: str) -> str:
     if _contains_any(normalized, ("исковое заявление", "определение суда", "решение суда", "суд ", " арбитраж")):
         return "court_document"
 
-    if _contains_any(normalized, ("договор", "стороны", "предмет договора", "соглашение")):
-        return "contract_or_agreement"
-
     has_ballot_header = "бланк решения" in normalized
     has_vote_options = all(_contains_word(normalized, option) for option in ("за", "против", "воздержался"))
     if (has_ballot_header or has_vote_options) and ("голос" in normalized or "собра" in normalized):
         return "voting_ballot"
 
-    if _contains_any(
-        normalized,
-        (
-            "общее собрание",
-            "собрание собственников",
-            "повестка",
-            "голосование",
-            "внеочередное общее собрание",
-        ),
-    ):
+    meeting_notice_markers = (
+        "сообщение о проведении",
+        "общее собрание",
+        "внеочередное общее собрание",
+        "собрание собственников",
+        "повестка",
+        "голосование",
+        "очно-заочное голосование",
+    )
+    if _contains_any(normalized, meeting_notice_markers):
         return "meeting_notice"
+
+    if _contains_any(normalized, ("договор", "стороны", "предмет договора", "соглашение")):
+        return "contract_or_agreement"
 
     if _contains_any(normalized, ("жилкомсервис", " жкс", "управляющая организация")):
         return "housing_management_document"
