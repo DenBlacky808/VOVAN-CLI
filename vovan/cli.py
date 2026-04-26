@@ -6,7 +6,7 @@ import platform
 import sys
 
 from vovan.config import load_settings, validate_required_env
-from vovan.ocr import run_ocr
+from vovan.ocr import _is_tesseract_available, list_tesseract_languages, run_ocr
 from vovan.preflight import run_preflight
 from vovan.report import write_report
 from vovan.worker import list_jobs, run_worker
@@ -29,7 +29,21 @@ def cmd_doctor() -> int:
         "log_dir_exists": settings.log_dir.exists(),
         "ready": len(missing) == 0,
         "ocr_engine": settings.ocr_engine,
+        "tesseract_available": _is_tesseract_available(),
+        "tesseract_path": None,
+        "tesseract_languages_available": [],
+        "tesseract_lang_configured": settings.tesseract_lang,
+        "tesseract_lang_available": False,
     }
+    if result["tesseract_available"]:
+        import shutil
+
+        languages = list_tesseract_languages()
+        result["tesseract_path"] = shutil.which("tesseract")
+        result["tesseract_languages_available"] = languages
+        requested_languages = [token.strip() for token in settings.tesseract_lang.split("+") if token.strip()]
+        result["tesseract_lang_available"] = bool(languages) and all(token in languages for token in requested_languages)
+
     print(json.dumps(result, ensure_ascii=False, indent=2))
     write_report(settings, "doctor", result)
     return 0 if result["ready"] else 1
@@ -50,7 +64,7 @@ def cmd_ocr(path: str) -> int:
         print(json.dumps({"status": "error", "message": "File is not suitable for OCR", "preflight": preflight}, ensure_ascii=False, indent=2))
         return 1
 
-    result = run_ocr(path, settings.ocr_engine)
+    result = run_ocr(path, settings.ocr_engine, tesseract_lang=settings.tesseract_lang)
     result["ocr_engine"] = result.get("engine")
     print(json.dumps(result, ensure_ascii=False, indent=2))
     write_report(settings, "ocr", {"preflight": preflight, "ocr": result})
