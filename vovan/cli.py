@@ -5,6 +5,7 @@ import json
 import platform
 import sys
 
+from vovan.analysis import build_document_analysis
 from vovan.config import load_settings, validate_required_env
 from vovan.ocr import _is_tesseract_available, list_tesseract_languages, run_ocr
 from vovan.preflight import run_preflight
@@ -71,6 +72,8 @@ def cmd_ocr(path: str) -> int:
         pdf_max_pages=settings.pdf_max_pages,
         pdf_dpi=settings.pdf_dpi,
     )
+    analysis = build_document_analysis(result.get("result_text", ""))
+    result.update(analysis)
     result["ocr_engine"] = result.get("engine")
     print(json.dumps(result, ensure_ascii=False, indent=2))
     write_report(settings, "ocr", {"preflight": preflight, "ocr": result})
