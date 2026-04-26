@@ -55,9 +55,14 @@ def cmd_ocr(path: str) -> int:
     return 0
 
 
-def cmd_worker() -> int:
+def cmd_worker(live: bool, dry_run: bool, once: bool) -> int:
     settings = load_settings()
-    result = run_worker(settings)
+    if live:
+        settings.dry_run = False
+    if dry_run:
+        settings.dry_run = True
+
+    result = run_worker(settings, once=once)
     print(json.dumps(result, ensure_ascii=False, indent=2))
     write_report(settings, "worker", result)
     return 0 if result.get("status") == "ok" else 1
@@ -91,7 +96,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_ocr = sub.add_parser("ocr")
     p_ocr.add_argument("path")
 
-    sub.add_parser("worker")
+    p_worker = sub.add_parser("worker")
+    p_worker.add_argument("--dry-run", action="store_true", help="Run worker without real HTTP calls")
+    p_worker.add_argument("--live", action="store_true", help="Run worker against live VLADCHER API")
+    p_worker.add_argument("--once", action="store_true", help="Run one claim/download/complete iteration")
+
     sub.add_parser("jobs")
     sub.add_parser("report")
 
@@ -109,7 +118,10 @@ def main() -> int:
     if args.command == "ocr":
         return cmd_ocr(args.path)
     if args.command == "worker":
-        return cmd_worker()
+        if args.live and args.dry_run:
+            print(json.dumps({"status": "error", "message": "Use only one mode: --live or --dry-run"}, ensure_ascii=False, indent=2))
+            return 1
+        return cmd_worker(live=args.live, dry_run=args.dry_run, once=args.once)
     if args.command == "jobs":
         return cmd_jobs()
     if args.command == "report":

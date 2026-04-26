@@ -13,9 +13,12 @@ class Settings:
     data_dir: Path
     log_dir: Path
     report_dir: Path
+    download_dir: Path
     allowed_extensions: set[str]
     max_file_size_mb: int
     dry_run: bool
+    request_timeout_seconds: int
+    worker_sleep_seconds: int
 
 
 def _to_bool(value: str) -> bool:
@@ -50,9 +53,12 @@ def load_settings(env_file: str = ".env") -> Settings:
         data_dir=Path(os.getenv("VOVAN_DATA_DIR", "./data")),
         log_dir=Path(os.getenv("VOVAN_LOG_DIR", "./logs")),
         report_dir=Path(os.getenv("VOVAN_REPORT_DIR", "./reports")),
+        download_dir=Path(os.getenv("VOVAN_DOWNLOAD_DIR", "./data/downloads")),
         allowed_extensions=allowed_extensions,
         max_file_size_mb=int(os.getenv("VOVAN_MAX_FILE_SIZE_MB", "50")),
         dry_run=_to_bool(os.getenv("VOVAN_DRY_RUN", "true")),
+        request_timeout_seconds=int(os.getenv("VOVAN_REQUEST_TIMEOUT_SECONDS", "30")),
+        worker_sleep_seconds=int(os.getenv("VOVAN_WORKER_SLEEP_SECONDS", "5")),
     )
 
 
