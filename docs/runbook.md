@@ -28,24 +28,53 @@ make doctor
 make preflight SAMPLE=./data/sample.txt
 ```
 
-## 5) Placeholder OCR
+## 5) Local image OCR (real Tesseract text)
+
+Установка macOS/Hackintosh:
+
+```bash
+brew install tesseract
+python3 -m pip install -e ".[dev]"
+```
+
+Smoke test для PNG/JPG/JPEG:
+
+```bash
+python3 -m vovan.local_ocr /path/to/file.png
+```
+
+Альтернативный entrypoint после установки:
+
+```bash
+vovan-ocr-file /path/to/file.jpg
+```
+
+Поддерживаемые форматы: `.png`, `.jpg`, `.jpeg`.
+
+Ограничения:
+- PDF здесь не поддерживается.
+- Если `tesseract` не установлен или не найден в `PATH`, команда завершается non-zero.
+- Если OCR вернул пустой текст, команда завершается non-zero с явной ошибкой.
+- Качество зависит от изображения и установленных language packs.
+
+## 6) Placeholder OCR
 
 ```bash
 make ocr SAMPLE=./data/sample.txt
 ```
 
-## 6) Docker Compose worker
+## 7) Docker Compose worker
 
 ```bash
 make docker-worker
 ```
 
-## 7) Где смотреть артефакты
+## 8) Где смотреть артефакты
 
 - Логи: `./logs`
 - Отчёты: `./reports`
 
-## 8) API paths (реальный контракт)
+## 9) API paths (реальный контракт)
 
 Проверьте, что worker ходит в VLADCHER_ru только по следующим путям:
 
