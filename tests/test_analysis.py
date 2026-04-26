@@ -55,3 +55,17 @@ def test_build_document_analysis_title_strips_leading_page_marker() -> None:
     data = build_document_analysis(text)
     assert not data["document_title"].startswith("PAGE 1")
     assert data["document_title"].startswith("Сообщение")
+
+
+def test_meeting_notice_takes_precedence_over_contract_with_meeting_markers() -> None:
+    text = """
+    Сообщение о проведении внеочередного Общего собрания собственников помещений.
+    Повестка и очно-заочное голосование по вопросам дома.
+    В тексте встречается договор управления с ООО "Жилкомсервис №1".
+    """
+    assert classify_document(text) == "meeting_notice"
+
+
+def test_contract_or_agreement_classified_correctly() -> None:
+    text = "Договор между сторонами. Предмет договора и условия соглашения изложены в документе."
+    assert classify_document(text) == "contract_or_agreement"
