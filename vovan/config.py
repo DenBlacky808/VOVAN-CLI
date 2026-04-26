@@ -17,6 +17,7 @@ class Settings:
     max_file_size_mb: int
     dry_run: bool
     ocr_engine: str = "placeholder"
+    tesseract_lang: str = "eng"
 
 
 def _to_bool(value: str) -> bool:
@@ -55,6 +56,7 @@ def load_settings(env_file: str = ".env") -> Settings:
         max_file_size_mb=int(os.getenv("VOVAN_MAX_FILE_SIZE_MB", "50")),
         dry_run=_to_bool(os.getenv("VOVAN_DRY_RUN", "true")),
         ocr_engine=os.getenv("VOVAN_OCR_ENGINE", "placeholder").strip().lower() or "placeholder",
+        tesseract_lang=os.getenv("VOVAN_TESSERACT_LANG", "eng").strip() or "eng",
     )
 
 

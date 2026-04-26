@@ -36,16 +36,18 @@ def test_run_ocr_tesseract_available_for_image(monkeypatch, tmp_path: Path) -> N
     image.write_bytes(b"fake")
 
     monkeypatch.setattr(ocr_module.shutil, "which", lambda _: "/usr/bin/tesseract")
-    completed = Mock(returncode=0, stdout="recognized text\n", stderr="")
-    run_mock = Mock(return_value=completed)
+    list_completed = Mock(returncode=0, stdout="List of available languages in \"/tmp\":\neng\nrus\n", stderr="")
+    ocr_completed = Mock(returncode=0, stdout="recognized text\n", stderr="")
+    run_mock = Mock(side_effect=[list_completed, ocr_completed])
     monkeypatch.setattr(ocr_module.subprocess, "run", run_mock)
 
-    result = run_ocr(str(image), "tesseract")
+    result = run_ocr(str(image), "tesseract", tesseract_lang="rus+eng")
     assert result["status"] == "completed"
     assert result["result_text"] == "recognized text"
     assert result["engine_requested"] == "tesseract"
     assert result["engine"] == "tesseract"
-    run_mock.assert_called_once()
+    assert run_mock.call_count == 2
+    assert run_mock.call_args_list[1].args[0] == ["tesseract", str(image), "stdout", "-l", "rus+eng"]
 
 
 def test_run_ocr_tesseract_available_but_pdf_falls_back(monkeypatch) -> None:
@@ -59,3 +61,19 @@ def test_run_ocr_tesseract_available_but_pdf_falls_back(monkeypatch) -> None:
     assert result["engine"] == "placeholder"
     assert "unsupported for this file" in result["engine_warning"]
     run_mock.assert_not_called()
+
+
+def test_run_ocr_tesseract_missing_requested_language_falls_back_safely(monkeypatch, tmp_path: Path) -> None:
+    image = tmp_path / "scan.png"
+    image.write_bytes(b"fake")
+
+    monkeypatch.setattr(ocr_module.shutil, "which", lambda _: "/usr/bin/tesseract")
+    list_completed = Mock(returncode=0, stdout="List of available languages in \"/tmp\":\neng\n", stderr="")
+    run_mock = Mock(return_value=list_completed)
+    monkeypatch.setattr(ocr_module.subprocess, "run", run_mock)
+
+    result = run_ocr(str(image), "tesseract", tesseract_lang="rus+eng")
+    assert result["status"] == "completed"
+    assert result["engine"] == "placeholder"
+    assert result["engine_requested"] == "tesseract"
+    assert "not installed" in result["engine_warning"]
