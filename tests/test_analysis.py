@@ -11,6 +11,15 @@ def test_meeting_notice_classified_correctly() -> None:
     assert classify_document(text) == "meeting_notice"
 
 
+def test_meeting_notice_wins_over_housing_management_document() -> None:
+    text = (
+        "Сообщение о проведении внеочередного Общего собрания собственников помещений. "
+        "Повестка собрания и порядок голосования. "
+        "Жилкомсервис №1."
+    )
+    assert classify_document(text) == "meeting_notice"
+
+
 def test_voting_ballot_classified_correctly() -> None:
     text = "Бланк решения собственника: голосование по вопросам. Варианты: за, против, воздержался."
     assert classify_document(text) == "voting_ballot"
@@ -34,3 +43,9 @@ def test_build_document_analysis_contains_required_fields() -> None:
         "document_title",
         "short_summary",
     }
+
+
+def test_build_document_analysis_strips_leading_page_marker_from_title() -> None:
+    data = build_document_analysis("--- PAGE 1 ---\nВажное уведомление о собрании собственников.")
+    assert not data["document_title"].startswith("PAGE 1")
+    assert data["document_title"].startswith("Важное уведомление")

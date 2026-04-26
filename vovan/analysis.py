@@ -5,6 +5,7 @@ from collections.abc import Iterable
 
 
 _WHITESPACE_RE = re.compile(r"\s+")
+_LEADING_PAGE_MARKER_RE = re.compile(r"^(?:-\s*){2,}\s*page\s+\d+\s*(?:-\s*){2,}\s*", flags=re.IGNORECASE)
 
 
 def normalize_ocr_text(text: str) -> str:
@@ -26,9 +27,6 @@ def classify_document(text: str) -> str:
     if not normalized:
         return "unknown"
 
-    if _contains_any(normalized, ("жилкомсервис", " жкс", "управляющая организация")):
-        return "housing_management_document"
-
     if _contains_any(normalized, ("мчс", "пожар", "эвакуац")):
         return "mchs_document"
 
@@ -46,8 +44,18 @@ def classify_document(text: str) -> str:
     ):
         return "voting_ballot"
 
-    if _contains_any(normalized, ("общее собрание", "повестка", "голосование")):
+    meeting_notice_markers = (
+        "общее собрание",
+        "собрание собственников",
+        "повестка",
+        "голосование",
+        "внеочередное общее собрание",
+    )
+    if _contains_any(normalized, meeting_notice_markers):
         return "meeting_notice"
+
+    if _contains_any(normalized, ("жилкомсервис", " жкс", "управляющая организация")):
+        return "housing_management_document"
 
     if _contains_any(normalized, ("рассмотрев обращение", "сообщаем", "на ваше обращение")):
         return "official_response"
@@ -71,11 +79,18 @@ def _build_title(normalized: str, document_type: str) -> str:
     if not normalized:
         return "Без названия"
 
-    first_sentence = re.split(r"[.!?]\s+", normalized, maxsplit=1)[0].strip(" -:;")
+    cleaned = normalized
+    while cleaned:
+        updated = _LEADING_PAGE_MARKER_RE.sub("", cleaned, count=1).lstrip()
+        if updated == cleaned:
+            break
+        cleaned = updated
+
+    first_sentence = re.split(r"[.!?]\s+", cleaned, maxsplit=1)[0].strip(" -:;")
     if first_sentence:
         return first_sentence[:120]
 
-    fallback = normalized[:120].strip()
+    fallback = cleaned[:120].strip()
     if fallback:
         return fallback
 
