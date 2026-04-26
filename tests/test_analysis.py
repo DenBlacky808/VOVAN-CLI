@@ -30,6 +30,21 @@ def test_voting_ballot_classified_correctly() -> None:
     assert classify_document(text) == "voting_ballot"
 
 
+def test_meeting_notice_takes_precedence_over_contract_with_strong_markers() -> None:
+    text = """
+    Сообщение о проведении внеочередного Общего собрания собственников помещений.
+    Повестка и порядок голосования указаны в настоящем уведомлении.
+    В приложении также упоминается договор управления.
+    Управляющая организация: Жилкомсервис №1.
+    """
+    assert classify_document(text) == "meeting_notice"
+
+
+def test_contract_or_agreement_classified_without_strong_meeting_markers() -> None:
+    text = "Договор между сторонами. Предмет договора: оказание услуг."
+    assert classify_document(text) == "contract_or_agreement"
+
+
 def test_official_response_classified_correctly() -> None:
     text = "Рассмотрев обращение, сообщаем: на ваше обращение подготовлен ответ."
     assert classify_document(text) == "official_response"

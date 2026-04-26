@@ -40,13 +40,32 @@ def classify_document(text: str) -> str:
     if _contains_any(normalized, ("исковое заявление", "определение суда", "решение суда", "суд ", " арбитраж")):
         return "court_document"
 
-    if _contains_any(normalized, ("договор", "стороны", "предмет договора", "соглашение")):
-        return "contract_or_agreement"
+    strong_meeting_markers = (
+        "сообщение о проведении",
+        "общее собрание",
+        "внеочередное общее собрание",
+        "собрание собственников",
+        "повестка",
+        "голосование",
+        "очно-заочное голосование",
+    )
+    strong_meeting_markers_count = sum(1 for marker in strong_meeting_markers if marker in normalized)
+    has_strong_meeting_notice = (
+        "внеочередное общее собрание" in normalized
+        or ("сообщение о проведении" in normalized and ("собрание" in normalized or "голосован" in normalized))
+        or strong_meeting_markers_count >= 2
+    )
 
     has_ballot_header = "бланк решения" in normalized
     has_vote_options = all(_contains_word(normalized, option) for option in ("за", "против", "воздержался"))
     if (has_ballot_header or has_vote_options) and ("голос" in normalized or "собра" in normalized):
         return "voting_ballot"
+
+    if has_strong_meeting_notice:
+        return "meeting_notice"
+
+    if _contains_any(normalized, ("договор", "стороны", "предмет договора", "соглашение")):
+        return "contract_or_agreement"
 
     if _contains_any(
         normalized,
