@@ -28,6 +28,15 @@ make ocr SAMPLE=./data/sample.txt
 - `vovan jobs`
 - `vovan report`
 
+## Fallback без install -e
+
+Если entrypoint `vovan` ещё не установлен (например, без `make install`), используйте module mode:
+
+```bash
+python3 -m vovan.cli doctor
+python3 -m vovan.cli worker
+```
+
 ## Docker Compose
 
 ```bash
