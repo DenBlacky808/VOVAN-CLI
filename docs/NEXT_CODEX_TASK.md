@@ -23,6 +23,6 @@
 - GPU/ROCm не подключены.
 - Нет Playwright/Selenium.
 
-## Следующий рекомендуемый PR
+## Следующий PR (один)
 
 `connect_vovan_cli_to_real_vladcher_worker_api.md`

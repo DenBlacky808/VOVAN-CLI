@@ -19,6 +19,13 @@ make preflight SAMPLE=./data/sample.txt
 make ocr SAMPLE=./data/sample.txt
 ```
 
+Если entrypoint `vovan` ещё не установлен (без `make install`), используйте module mode:
+
+```bash
+python3 -m vovan.cli doctor
+python3 -m vovan.cli worker
+```
+
 ## CLI команды
 
 - `vovan doctor`
