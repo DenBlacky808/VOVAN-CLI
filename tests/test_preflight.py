@@ -15,8 +15,11 @@ def test_preflight_txt_file(tmp_path: Path) -> None:
         data_dir=tmp_path,
         log_dir=tmp_path,
         report_dir=tmp_path,
+        download_dir=tmp_path / "downloads",
         allowed_extensions={".txt", ".pdf"},
         max_file_size_mb=1,
+        request_timeout_seconds=30,
+        worker_sleep_seconds=5,
         dry_run=True,
     )
 

@@ -24,9 +24,18 @@ make ocr SAMPLE=./data/sample.txt
 - `vovan doctor`
 - `vovan preflight <path>`
 - `vovan ocr <path>`
-- `vovan worker`
+- `vovan worker --dry-run --once`
+- `vovan worker --live --once`
 - `vovan jobs`
 - `vovan report`
+
+## Worker режимы
+
+- `--dry-run`: принудительно без HTTP вызовов (удобно для smoke локально).
+- `--live`: принудительно реальный HTTP pull в VLADCHER_ru API.
+- `--once`: выполнить ровно один цикл worker (claim → download → preflight → placeholder OCR → complete/fail).
+
+Если флаги не заданы, используется `VOVAN_DRY_RUN` из `.env`.
 
 ## Fallback без install -e
 
@@ -34,7 +43,7 @@ make ocr SAMPLE=./data/sample.txt
 
 ```bash
 python3 -m vovan.cli doctor
-python3 -m vovan.cli worker
+python3 -m vovan.cli worker --dry-run --once
 ```
 
 ## Docker Compose

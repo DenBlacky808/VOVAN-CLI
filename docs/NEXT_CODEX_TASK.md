@@ -2,4 +2,4 @@
 
 ## Следующий PR
 
-`connect_vovan_cli_to_real_vladcher_worker_api.md`
+`add_real_cpu_ocr_engine_after_live_api_smoke.md`
