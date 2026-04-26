@@ -55,9 +55,14 @@ def cmd_ocr(path: str) -> int:
     return 0
 
 
-def cmd_worker() -> int:
+def cmd_worker(worker_live: bool, worker_dry_run: bool, worker_once: bool) -> int:
     settings = load_settings()
-    result = run_worker(settings)
+    if worker_live:
+        settings.dry_run = False
+    if worker_dry_run:
+        settings.dry_run = True
+
+    result = run_worker(settings, once=worker_once)
     print(json.dumps(result, ensure_ascii=False, indent=2))
     write_report(settings, "worker", result)
     return 0 if result.get("status") == "ok" else 1
@@ -91,7 +96,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_ocr = sub.add_parser("ocr")
     p_ocr.add_argument("path")
 
-    sub.add_parser("worker")
+    p_worker = sub.add_parser("worker")
+    mode_group = p_worker.add_mutually_exclusive_group()
+    mode_group.add_argument("--dry-run", action="store_true", dest="worker_dry_run")
+    mode_group.add_argument("--live", action="store_true", dest="worker_live")
+    p_worker.add_argument("--once", action="store_true", dest="worker_once")
+
     sub.add_parser("jobs")
     sub.add_parser("report")
 
@@ -109,7 +119,11 @@ def main() -> int:
     if args.command == "ocr":
         return cmd_ocr(args.path)
     if args.command == "worker":
-        return cmd_worker()
+        return cmd_worker(
+            worker_live=getattr(args, "worker_live", False),
+            worker_dry_run=getattr(args, "worker_dry_run", False),
+            worker_once=getattr(args, "worker_once", False),
+        )
     if args.command == "jobs":
         return cmd_jobs()
     if args.command == "report":

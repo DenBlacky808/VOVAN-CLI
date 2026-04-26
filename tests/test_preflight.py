@@ -18,6 +18,9 @@ def test_preflight_txt_file(tmp_path: Path) -> None:
         allowed_extensions={".txt", ".pdf"},
         max_file_size_mb=1,
         dry_run=True,
+        request_timeout_seconds=30,
+        worker_sleep_seconds=5,
+        download_dir=tmp_path / "downloads",
     )
 
     result = run_preflight(str(sample), settings)
