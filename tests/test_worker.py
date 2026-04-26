@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from vovan.config import Settings
-from vovan.worker import run_worker
+from vovan.worker import _build_download_filename, _download_to_local_file, run_worker
 
 
 def _settings() -> Settings:
@@ -85,7 +85,7 @@ def test_worker_full_mocked_flow_complete(monkeypatch, tmp_path: Path) -> None:
 
     settings = _settings()
     settings.data_dir = tmp_path
-    settings.allowed_extensions = {".txt"}
+    settings.allowed_extensions = {".pdf"}
     settings.max_file_size_mb = 1
     settings.dry_run = False
 
@@ -97,7 +97,7 @@ def test_worker_full_mocked_flow_complete(monkeypatch, tmp_path: Path) -> None:
 
         def claim_next_job(self):
             call_order.append("claim")
-            return {"job_id": "42"}
+            return {"job_id": "42", "original_filename": "scan.pdf"}
 
         def download_job_file(self, job_id: str):
             call_order.append("download")
@@ -146,7 +146,7 @@ def test_worker_preflight_failure_reports_fail(monkeypatch, tmp_path: Path) -> N
 
         def claim_next_job(self):
             call_order.append("claim")
-            return {"job_id": "99"}
+            return {"job_id": "99", "original_filename": "scan.txt"}
 
         def download_job_file(self, job_id: str):
             call_order.append("download")
@@ -173,3 +173,51 @@ def test_worker_preflight_failure_reports_fail(monkeypatch, tmp_path: Path) -> N
     assert result["fail_result"] == {"ok": True}
     assert "complete_result" not in result
     assert call_order == ["claim", "download", "fail", "status"]
+
+
+def test_download_filename_prefers_claim_original_filename() -> None:
+    assert _build_download_filename("42", {"original_filename": "scan.pdf"}) == "scan.pdf"
+
+
+def test_download_filename_sanitizes_unsafe_original_filename() -> None:
+    filename = _build_download_filename("42", {"original_filename": "../../bad dir/evil?.pdf"})
+    assert filename == "evil_.pdf"
+    assert "/" not in filename
+    assert "\\" not in filename
+
+
+def test_download_filename_falls_back_to_job_pdf() -> None:
+    assert _build_download_filename("42", {}) == "job_42.pdf"
+    assert _build_download_filename("42", {"original_filename": ""}) == "job_42.pdf"
+
+
+def test_download_to_local_file_keeps_pdf_extension_for_preflight(tmp_path: Path) -> None:
+    settings = _settings()
+    settings.data_dir = tmp_path
+    settings.allowed_extensions = {".pdf"}
+    settings.dry_run = False
+
+    class FakeClient:
+        def download_job_file(self, job_id: str):
+            return b"%PDF-1.4"
+
+    local_file = _download_to_local_file(
+        FakeClient(),
+        settings,
+        "77",
+        {"original_filename": "scan.pdf"},
+    )
+    assert local_file.suffix == ".pdf"
+
+
+def test_download_to_local_file_supports_live_bytes_payload(tmp_path: Path) -> None:
+    settings = _settings()
+    settings.data_dir = tmp_path
+    settings.dry_run = False
+
+    class FakeClient:
+        def download_job_file(self, job_id: str):
+            return b"live-bytes"
+
+    local_file = _download_to_local_file(FakeClient(), settings, "11", {"original_filename": "scan.pdf"})
+    assert local_file.read_bytes() == b"live-bytes"

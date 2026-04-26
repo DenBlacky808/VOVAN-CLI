@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from vovan.api_client import VladcherApiClient
@@ -51,7 +52,7 @@ def run_worker(settings: Settings) -> dict:
         }
 
     settings.data_dir.mkdir(parents=True, exist_ok=True)
-    local_file = _download_to_local_file(client, settings, str(job_id))
+    local_file = _download_to_local_file(client, settings, str(job_id), claim)
     preflight = run_preflight(str(local_file), settings)
 
     if not preflight["suitable_for_ocr"]:
@@ -89,8 +90,36 @@ def run_worker(settings: Settings) -> dict:
     }
 
 
-def _download_to_local_file(client: VladcherApiClient, settings: Settings, job_id: str) -> Path:
-    destination = settings.data_dir / f"job_{job_id}.txt"
+def _sanitize_original_filename(original_filename: str) -> str:
+    basename = original_filename.replace("\\", "/").split("/")[-1].strip()
+    sanitized = re.sub(r"[^A-Za-z0-9._-]+", "_", basename).strip(" .")
+    if not sanitized or sanitized in {".", ".."} or set(sanitized) == {"."}:
+        return ""
+    if sanitized.startswith("."):
+        sanitized = sanitized.lstrip(".")
+    return sanitized
+
+
+def _build_download_filename(job_id: str, claim_payload: dict | None) -> str:
+    fallback = f"job_{job_id}.pdf"
+    if not isinstance(claim_payload, dict):
+        return fallback
+
+    original_filename = claim_payload.get("original_filename")
+    if not isinstance(original_filename, str) or not original_filename.strip():
+        return fallback
+
+    sanitized = _sanitize_original_filename(original_filename)
+    return sanitized or fallback
+
+
+def _download_to_local_file(
+    client: VladcherApiClient,
+    settings: Settings,
+    job_id: str,
+    claim_payload: dict | None = None,
+) -> Path:
+    destination = settings.data_dir / _build_download_filename(job_id, claim_payload)
     payload = client.download_job_file(job_id)
 
     if isinstance(payload, bytes):
