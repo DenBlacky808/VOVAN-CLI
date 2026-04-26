@@ -15,6 +15,7 @@ def _settings() -> Settings:
         allowed_extensions={".txt"},
         max_file_size_mb=1,
         dry_run=True,
+        ocr_engine="placeholder",
     )
 
 
@@ -124,9 +125,47 @@ def test_worker_full_mocked_flow_complete(monkeypatch, tmp_path: Path) -> None:
     assert result["status"] == "ok"
     assert result["job_id"] == "42"
     assert result["preflight"]["suitable_for_ocr"] is True
+    assert result["ocr_engine"] == "placeholder"
     assert result["ocr"]["result_text"] == "placeholder OCR result"
     assert result["complete_result"] == {"ok": True}
     assert call_order == ["claim", "download", "complete", "status"]
+
+
+def test_worker_unsupported_engine_falls_back_safely(monkeypatch, tmp_path: Path) -> None:
+    from vovan import worker as worker_module
+
+    settings = _settings()
+    settings.data_dir = tmp_path
+    settings.allowed_extensions = {".pdf"}
+    settings.max_file_size_mb = 1
+    settings.dry_run = False
+    settings.ocr_engine = "unknown-engine"
+
+    class FakeClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def claim_next_job(self):
+            return {"job_id": "42", "original_filename": "scan.pdf"}
+
+        def download_job_file(self, job_id: str):
+            return b"hello from api"
+
+        def submit_result(self, job_id: str, result_text: str):
+            assert result_text == "placeholder OCR result"
+            return {"ok": True}
+
+        def submit_failure(self, job_id: str, error_message: str):
+            return {"ok": True}
+
+        def get_job_status(self, job_id: str):
+            return {"ok": True, "status": "completed"}
+
+    monkeypatch.setattr(worker_module, "VladcherApiClient", FakeClient)
+    result = run_worker(settings)
+    assert result["status"] == "ok"
+    assert result["ocr_engine"] == "placeholder"
+    assert "unsupported OCR engine" in result["ocr"]["warning"]
 
 
 def test_worker_preflight_failure_reports_fail(monkeypatch, tmp_path: Path) -> None:

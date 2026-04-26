@@ -6,7 +6,7 @@ import platform
 import sys
 
 from vovan.config import load_settings, validate_required_env
-from vovan.ocr import run_placeholder_ocr
+from vovan.ocr import run_ocr
 from vovan.preflight import run_preflight
 from vovan.report import write_report
 from vovan.worker import list_jobs, run_worker
@@ -49,9 +49,9 @@ def cmd_ocr(path: str) -> int:
         print(json.dumps({"status": "error", "message": "File is not suitable for OCR", "preflight": preflight}, ensure_ascii=False, indent=2))
         return 1
 
-    result = run_placeholder_ocr(path)
+    result = run_ocr(path, engine=settings.ocr_engine)
     print(json.dumps(result, ensure_ascii=False, indent=2))
-    write_report(settings, "ocr", {"preflight": preflight, "ocr": result})
+    write_report(settings, "ocr", {"preflight": preflight, "ocr_engine": result["engine"], "ocr": result})
     return 0
 
 

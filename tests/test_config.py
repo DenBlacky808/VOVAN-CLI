@@ -12,6 +12,7 @@ def test_validate_required_env_missing() -> None:
         allowed_extensions={".txt"},
         max_file_size_mb=1,
         dry_run=True,
+        ocr_engine="placeholder",
     )
     missing = validate_required_env(settings)
     assert "VLADCHER_BASE_URL" in missing

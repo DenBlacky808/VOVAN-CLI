@@ -5,7 +5,7 @@ from pathlib import Path
 
 from vovan.api_client import VladcherApiClient
 from vovan.config import Settings, validate_required_env
-from vovan.ocr import run_placeholder_ocr
+from vovan.ocr import run_ocr
 from vovan.preflight import run_preflight
 
 
@@ -72,7 +72,7 @@ def run_worker(settings: Settings) -> dict:
             "message": error_message,
         }
 
-    ocr = run_placeholder_ocr(str(local_file))
+    ocr = run_ocr(str(local_file), engine=settings.ocr_engine)
     complete_result = client.submit_result(str(job_id), ocr["result_text"])
     status_result = client.get_job_status(str(job_id))
 
@@ -84,6 +84,7 @@ def run_worker(settings: Settings) -> dict:
         "job_id": job_id,
         "source_file": str(local_file),
         "preflight": preflight,
+        "ocr_engine": ocr["engine"],
         "ocr": ocr,
         "complete_result": complete_result,
         "job_status": status_result,
