@@ -1,4 +1,6 @@
-from vovan.config import Settings, validate_required_env
+from pathlib import Path
+
+from vovan.config import Settings, load_settings, validate_required_env
 
 
 def test_validate_required_env_missing() -> None:
@@ -31,3 +33,15 @@ def test_settings_default_ocr_engine() -> None:
         dry_run=True,
     )
     assert settings.ocr_engine == "placeholder"
+    assert settings.tesseract_lang == "eng"
+
+
+def test_load_settings_tesseract_lang_defaults_to_eng(tmp_path: Path) -> None:
+    settings = load_settings(env_file=str(tmp_path / ".env.missing"))
+    assert settings.tesseract_lang == "eng"
+
+
+def test_load_settings_reads_tesseract_lang(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("VOVAN_TESSERACT_LANG", "rus+eng")
+    settings = load_settings(env_file=str(tmp_path / ".env.missing"))
+    assert settings.tesseract_lang == "rus+eng"

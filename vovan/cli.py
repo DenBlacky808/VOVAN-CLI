@@ -6,7 +6,7 @@ import platform
 import sys
 
 from vovan.config import load_settings, validate_required_env
-from vovan.ocr import run_ocr
+from vovan.ocr import inspect_tesseract, run_ocr
 from vovan.preflight import run_preflight
 from vovan.report import write_report
 from vovan.worker import list_jobs, run_worker
@@ -29,6 +29,7 @@ def cmd_doctor() -> int:
         "log_dir_exists": settings.log_dir.exists(),
         "ready": len(missing) == 0,
         "ocr_engine": settings.ocr_engine,
+        **inspect_tesseract(settings.tesseract_lang),
     }
     print(json.dumps(result, ensure_ascii=False, indent=2))
     write_report(settings, "doctor", result)
@@ -50,7 +51,7 @@ def cmd_ocr(path: str) -> int:
         print(json.dumps({"status": "error", "message": "File is not suitable for OCR", "preflight": preflight}, ensure_ascii=False, indent=2))
         return 1
 
-    result = run_ocr(path, settings.ocr_engine)
+    result = run_ocr(path, settings.ocr_engine, settings.tesseract_lang)
     result["ocr_engine"] = result.get("engine")
     print(json.dumps(result, ensure_ascii=False, indent=2))
     write_report(settings, "ocr", {"preflight": preflight, "ocr": result})
