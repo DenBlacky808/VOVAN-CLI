@@ -7,8 +7,10 @@
 - Локальный worker (macOS/Hackintosh first, Linux later).
 - Не веб-сайт, не замена VLADCHER_ru.
 - Без входящих соединений.
-- OCR пока placeholder (без тяжёлой модели).
-- Engine переключается через `VOVAN_OCR_ENGINE` (`placeholder` по умолчанию, `tesseract` запланирован).
+- OCR по умолчанию `placeholder`, а `tesseract` доступен как опциональный engine.
+- Для PDF с `tesseract` выполняется безопасный локальный preprocessing через `pdftoppm` (если установлен), затем OCR по страницам.
+- Языки Tesseract: `VOVAN_TESSERACT_LANG` (например, `rus+eng`).
+- Лимиты PDF preprocessing: `VOVAN_PDF_MAX_PAGES` (по умолчанию `3`) и `VOVAN_PDF_DPI` (по умолчанию `200`).
 
 ## Быстрый старт
 

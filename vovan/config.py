@@ -18,6 +18,8 @@ class Settings:
     dry_run: bool
     ocr_engine: str = "placeholder"
     tesseract_lang: str = "eng"
+    pdf_max_pages: int = 3
+    pdf_dpi: int = 200
 
 
 def _to_bool(value: str) -> bool:
@@ -57,6 +59,8 @@ def load_settings(env_file: str = ".env") -> Settings:
         dry_run=_to_bool(os.getenv("VOVAN_DRY_RUN", "true")),
         ocr_engine=os.getenv("VOVAN_OCR_ENGINE", "placeholder").strip().lower() or "placeholder",
         tesseract_lang=os.getenv("VOVAN_TESSERACT_LANG", "eng").strip() or "eng",
+        pdf_max_pages=max(1, int(os.getenv("VOVAN_PDF_MAX_PAGES", "3"))),
+        pdf_dpi=max(72, int(os.getenv("VOVAN_PDF_DPI", "200"))),
     )
 
 
