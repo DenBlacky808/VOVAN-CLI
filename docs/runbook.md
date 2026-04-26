@@ -44,3 +44,13 @@ make docker-worker
 
 - Логи: `./logs`
 - Отчёты: `./reports`
+
+## 8) API paths (реальный контракт)
+
+Проверьте, что worker ходит в VLADCHER_ru только по следующим путям:
+
+- `GET /api/vovan/ocr/jobs/next/`
+- `GET /api/vovan/ocr/jobs/<job_id>/download/`
+- `POST /api/vovan/ocr/jobs/<job_id>/complete/` с payload минимум `{"result_text": "..."}`
+- `POST /api/vovan/ocr/jobs/<job_id>/fail/` с payload минимум `{"error_message": "..."}`
+- `GET /api/vovan/ocr/jobs/<job_id>/status/`
