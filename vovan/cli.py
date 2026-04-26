@@ -55,9 +55,15 @@ def cmd_ocr(path: str) -> int:
     return 0
 
 
-def cmd_worker() -> int:
+def cmd_worker(worker_mode: str, once: bool) -> int:
     settings = load_settings()
+    if worker_mode == "dry-run":
+        settings.dry_run = True
+    elif worker_mode == "live":
+        settings.dry_run = False
+
     result = run_worker(settings)
+    result["once"] = once
     print(json.dumps(result, ensure_ascii=False, indent=2))
     write_report(settings, "worker", result)
     return 0 if result.get("status") == "ok" else 1
@@ -91,7 +97,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_ocr = sub.add_parser("ocr")
     p_ocr.add_argument("path")
 
-    sub.add_parser("worker")
+    p_worker = sub.add_parser("worker")
+    mode = p_worker.add_mutually_exclusive_group()
+    mode.add_argument("--dry-run", dest="worker_mode", action="store_const", const="dry-run", default="from-env")
+    mode.add_argument("--live", dest="worker_mode", action="store_const", const="live")
+    p_worker.add_argument("--once", action="store_true", help="Execute a single claim/download/ocr/submit cycle")
+
     sub.add_parser("jobs")
     sub.add_parser("report")
 
@@ -109,7 +120,7 @@ def main() -> int:
     if args.command == "ocr":
         return cmd_ocr(args.path)
     if args.command == "worker":
-        return cmd_worker()
+        return cmd_worker(args.worker_mode, args.once)
     if args.command == "jobs":
         return cmd_jobs()
     if args.command == "report":

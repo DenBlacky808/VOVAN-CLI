@@ -24,9 +24,19 @@ make ocr SAMPLE=./data/sample.txt
 - `vovan doctor`
 - `vovan preflight <path>`
 - `vovan ocr <path>`
-- `vovan worker`
+- `vovan worker --dry-run --once`
+- `vovan worker --live --once`
 - `vovan jobs`
 - `vovan report`
+
+## Worker one-shot flow
+
+`vovan worker --live --once` выполняет последовательность:
+1. claim next job;
+2. download job file;
+3. local preflight;
+4. placeholder OCR;
+5. submit complete или submit failure при preflight fail.
 
 ## Fallback без install -e
 
@@ -34,7 +44,7 @@ make ocr SAMPLE=./data/sample.txt
 
 ```bash
 python3 -m vovan.cli doctor
-python3 -m vovan.cli worker
+python3 -m vovan.cli worker --dry-run --once
 ```
 
 ## Docker Compose

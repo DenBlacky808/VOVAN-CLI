@@ -34,13 +34,15 @@ make preflight SAMPLE=./data/sample.txt
 make ocr SAMPLE=./data/sample.txt
 ```
 
-## 6) Docker Compose worker
+## 6) Worker one-shot smoke
 
 ```bash
-make docker-worker
+python3 -m vovan.cli worker --dry-run --once
+python3 -m vovan.cli worker --live --once
 ```
 
 ## 7) Где смотреть артефакты
 
 - Логи: `./logs`
 - Отчёты: `./reports`
+- Загрузки job-файлов: `./data/downloads`
