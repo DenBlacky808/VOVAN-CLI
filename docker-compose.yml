@@ -1,0 +1,11 @@
+services:
+  vovan-worker:
+    build: .
+    container_name: vovan-worker
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./reports:/app/reports
+      - ./logs:/app/logs
+    command: ["worker"]
