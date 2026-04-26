@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vovan"
+version = "0.1.0"
+description = "VOVAN OCR CLI MVP skeleton"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0",
+]
+
+[project.scripts]
+vovan = "vovan.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
