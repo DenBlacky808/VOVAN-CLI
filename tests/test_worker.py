@@ -85,7 +85,7 @@ def test_worker_full_mocked_flow_complete(monkeypatch, tmp_path: Path) -> None:
 
     settings = _settings()
     settings.data_dir = tmp_path
-    settings.allowed_extensions = {".txt"}
+    settings.allowed_extensions = {".pdf"}
     settings.max_file_size_mb = 1
     settings.dry_run = False
 
@@ -97,7 +97,7 @@ def test_worker_full_mocked_flow_complete(monkeypatch, tmp_path: Path) -> None:
 
         def claim_next_job(self):
             call_order.append("claim")
-            return {"job_id": "42"}
+            return {"job_id": "42", "original_filename": "scan.pdf"}
 
         def download_job_file(self, job_id: str):
             call_order.append("download")
@@ -123,7 +123,9 @@ def test_worker_full_mocked_flow_complete(monkeypatch, tmp_path: Path) -> None:
 
     assert result["status"] == "ok"
     assert result["job_id"] == "42"
+    assert result["source_file"].endswith("job_42.pdf")
     assert result["preflight"]["suitable_for_ocr"] is True
+    assert result["preflight"]["extension"] == ".pdf"
     assert result["ocr"]["result_text"] == "placeholder OCR result"
     assert result["complete_result"] == {"ok": True}
     assert call_order == ["claim", "download", "complete", "status"]
@@ -135,7 +137,7 @@ def test_worker_preflight_failure_reports_fail(monkeypatch, tmp_path: Path) -> N
     settings = _settings()
     settings.data_dir = tmp_path
     settings.allowed_extensions = {".pdf"}
-    settings.max_file_size_mb = 1
+    settings.max_file_size_mb = 0
     settings.dry_run = False
 
     call_order = []
@@ -173,3 +175,140 @@ def test_worker_preflight_failure_reports_fail(monkeypatch, tmp_path: Path) -> N
     assert result["fail_result"] == {"ok": True}
     assert "complete_result" not in result
     assert call_order == ["claim", "download", "fail", "status"]
+
+
+def test_worker_download_uses_original_filename_extension(monkeypatch, tmp_path: Path) -> None:
+    from vovan import worker as worker_module
+
+    settings = _settings()
+    settings.data_dir = tmp_path
+    settings.allowed_extensions = {".pdf"}
+    settings.max_file_size_mb = 1
+    settings.dry_run = False
+
+    class FakeClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def claim_next_job(self):
+            return {"job_id": "777", "original_filename": "scan.pdf"}
+
+        def download_job_file(self, job_id: str):
+            return b"pdf bytes"
+
+        def submit_result(self, job_id: str, result_text: str):
+            return {"ok": True}
+
+        def submit_failure(self, job_id: str, error_message: str):
+            return {"ok": True}
+
+        def get_job_status(self, job_id: str):
+            return {"ok": True, "status": "completed"}
+
+    monkeypatch.setattr(worker_module, "VladcherApiClient", FakeClient)
+    result = run_worker(settings)
+    assert result["source_file"].endswith("job_777.pdf")
+    assert result["preflight"]["extension"] == ".pdf"
+    assert result["preflight"]["suitable_for_ocr"] is True
+
+
+def test_worker_download_sanitizes_unsafe_original_filename(monkeypatch, tmp_path: Path) -> None:
+    from vovan import worker as worker_module
+
+    settings = _settings()
+    settings.data_dir = tmp_path
+    settings.allowed_extensions = {".pdf"}
+    settings.max_file_size_mb = 1
+    settings.dry_run = False
+
+    class FakeClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def claim_next_job(self):
+            return {"job_id": "888", "original_filename": "../../bad dir/evil?.pdf"}
+
+        def download_job_file(self, job_id: str):
+            return b"pdf bytes"
+
+        def submit_result(self, job_id: str, result_text: str):
+            return {"ok": True}
+
+        def submit_failure(self, job_id: str, error_message: str):
+            return {"ok": True}
+
+        def get_job_status(self, job_id: str):
+            return {"ok": True, "status": "completed"}
+
+    monkeypatch.setattr(worker_module, "VladcherApiClient", FakeClient)
+    result = run_worker(settings)
+    assert result["source_file"].endswith("job_888.pdf")
+    assert ".." not in result["source_file"]
+    assert "bad dir" not in result["source_file"]
+
+
+def test_worker_download_missing_original_filename_uses_pdf_fallback(monkeypatch, tmp_path: Path) -> None:
+    from vovan import worker as worker_module
+
+    settings = _settings()
+    settings.data_dir = tmp_path
+    settings.allowed_extensions = {".pdf"}
+    settings.max_file_size_mb = 1
+    settings.dry_run = False
+
+    class FakeClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def claim_next_job(self):
+            return {"job_id": "999"}
+
+        def download_job_file(self, job_id: str):
+            return b"pdf bytes"
+
+        def submit_result(self, job_id: str, result_text: str):
+            return {"ok": True}
+
+        def submit_failure(self, job_id: str, error_message: str):
+            return {"ok": True}
+
+        def get_job_status(self, job_id: str):
+            return {"ok": True, "status": "completed"}
+
+    monkeypatch.setattr(worker_module, "VladcherApiClient", FakeClient)
+    result = run_worker(settings)
+    assert result["source_file"].endswith("job_999.pdf")
+
+
+def test_worker_live_bytes_download_still_supported(monkeypatch, tmp_path: Path) -> None:
+    from vovan import worker as worker_module
+
+    settings = _settings()
+    settings.data_dir = tmp_path
+    settings.allowed_extensions = {".pdf"}
+    settings.max_file_size_mb = 1
+    settings.dry_run = False
+
+    class FakeClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def claim_next_job(self):
+            return {"job_id": "1001", "original_filename": "live.pdf"}
+
+        def download_job_file(self, job_id: str):
+            return b"live bytes payload"
+
+        def submit_result(self, job_id: str, result_text: str):
+            return {"ok": True}
+
+        def submit_failure(self, job_id: str, error_message: str):
+            return {"ok": True}
+
+        def get_job_status(self, job_id: str):
+            return {"ok": True, "status": "completed"}
+
+    monkeypatch.setattr(worker_module, "VladcherApiClient", FakeClient)
+    result = run_worker(settings)
+    downloaded = Path(result["source_file"])
+    assert downloaded.read_bytes() == b"live bytes payload"

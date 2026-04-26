@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from vovan.api_client import VladcherApiClient
@@ -51,7 +52,7 @@ def run_worker(settings: Settings) -> dict:
         }
 
     settings.data_dir.mkdir(parents=True, exist_ok=True)
-    local_file = _download_to_local_file(client, settings, str(job_id))
+    local_file = _download_to_local_file(client, settings, str(job_id), claim)
     preflight = run_preflight(str(local_file), settings)
 
     if not preflight["suitable_for_ocr"]:
@@ -89,8 +90,13 @@ def run_worker(settings: Settings) -> dict:
     }
 
 
-def _download_to_local_file(client: VladcherApiClient, settings: Settings, job_id: str) -> Path:
-    destination = settings.data_dir / f"job_{job_id}.txt"
+def _download_to_local_file(
+    client: VladcherApiClient,
+    settings: Settings,
+    job_id: str,
+    claim_payload: dict | None = None,
+) -> Path:
+    destination = settings.data_dir / f"job_{job_id}{_resolve_download_extension(job_id, claim_payload)}"
     payload = client.download_job_file(job_id)
 
     if isinstance(payload, bytes):
@@ -99,6 +105,40 @@ def _download_to_local_file(client: VladcherApiClient, settings: Settings, job_i
         destination.write_text("dry-run placeholder input", encoding="utf-8")
 
     return destination
+
+
+def _resolve_download_extension(job_id: str, claim_payload: dict | None = None) -> str:
+    fallback_name = f"job_{job_id}.pdf"
+    if not isinstance(claim_payload, dict):
+        return Path(fallback_name).suffix
+
+    original_filename = claim_payload.get("original_filename")
+    if not isinstance(original_filename, str):
+        return Path(fallback_name).suffix
+
+    candidate = _sanitize_filename(original_filename)
+    if not candidate:
+        return Path(fallback_name).suffix
+
+    extension = Path(candidate).suffix.lower()
+    if not extension or extension == ".":
+        return Path(fallback_name).suffix
+
+    return extension
+
+
+def _sanitize_filename(value: str) -> str:
+    basename = value.replace("\\", "/").split("/")[-1].strip()
+    if not basename:
+        return ""
+
+    sanitized = re.sub(r"[^A-Za-z0-9._-]", "_", basename)
+    sanitized = sanitized.lstrip(".")
+
+    if not sanitized or set(sanitized) == {"."}:
+        return ""
+
+    return sanitized
 
 
 def list_jobs(settings: Settings) -> dict:
