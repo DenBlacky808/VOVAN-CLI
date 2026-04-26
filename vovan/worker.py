@@ -72,7 +72,13 @@ def run_worker(settings: Settings) -> dict:
             "message": error_message,
         }
 
-    ocr = run_ocr(str(local_file), settings.ocr_engine, tesseract_lang=settings.tesseract_lang)
+    ocr = run_ocr(
+        str(local_file),
+        settings.ocr_engine,
+        tesseract_lang=settings.tesseract_lang,
+        pdf_max_pages=settings.pdf_max_pages,
+        pdf_dpi=settings.pdf_dpi,
+    )
     complete_result = client.submit_result(str(job_id), ocr["result_text"])
     status_result = client.get_job_status(str(job_id))
 

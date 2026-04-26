@@ -38,6 +38,16 @@ python3 -m vovan.cli doctor
 python3 -m vovan.cli worker
 ```
 
+
+## OCR engine settings
+
+- `VOVAN_OCR_ENGINE=placeholder` (default) or `tesseract`
+- `VOVAN_TESSERACT_LANG=eng` (supports combined values like `rus+eng`)
+- `VOVAN_PDF_MAX_PAGES=3` (for PDF→PNG preprocessing before Tesseract OCR)
+- `VOVAN_PDF_DPI=200` (PDF rasterization DPI for `pdftoppm`)
+
+If `pdftoppm` is not available, PDF OCR with `tesseract` safely falls back to placeholder with `engine_warning`.
+
 ## Docker Compose
 
 ```bash

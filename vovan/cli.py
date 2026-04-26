@@ -64,7 +64,13 @@ def cmd_ocr(path: str) -> int:
         print(json.dumps({"status": "error", "message": "File is not suitable for OCR", "preflight": preflight}, ensure_ascii=False, indent=2))
         return 1
 
-    result = run_ocr(path, settings.ocr_engine, tesseract_lang=settings.tesseract_lang)
+    result = run_ocr(
+        path,
+        settings.ocr_engine,
+        tesseract_lang=settings.tesseract_lang,
+        pdf_max_pages=settings.pdf_max_pages,
+        pdf_dpi=settings.pdf_dpi,
+    )
     result["ocr_engine"] = result.get("engine")
     print(json.dumps(result, ensure_ascii=False, indent=2))
     write_report(settings, "ocr", {"preflight": preflight, "ocr": result})
