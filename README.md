@@ -44,7 +44,9 @@ python3 -m vovan.cli worker
 docker compose up --build vovan-worker
 ```
 
-См. `docs/runbook.md`, `docs/architecture.md` и smoke-checkpoint `docs/smoke/tesseract_image_smoke.md`.
+См. `docs/runbook.md`, `docs/architecture.md` и smoke-checkpoint:
+- `docs/smoke/tesseract_image_smoke.md`
+- `docs/smoke/tesseract_rus_eng_smoke.md`
 
 ## Live API контракт (VLADCHER_ru worker API)
 
