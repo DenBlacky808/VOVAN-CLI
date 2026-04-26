@@ -5,6 +5,7 @@ from collections.abc import Iterable
 
 
 _WHITESPACE_RE = re.compile(r"\s+")
+_LEADING_PAGE_MARKER_RE = re.compile(r"^(?:-+\s*)?page\s+\d+\s*(?:-+\s*)?", re.IGNORECASE)
 
 
 def normalize_ocr_text(text: str) -> str:
@@ -26,7 +27,17 @@ def classify_document(text: str) -> str:
     if not normalized:
         return "unknown"
 
-    if _contains_any(normalized, ("жилкомсервис", " жкс", "управляющая организация")):
+    strong_meeting_markers = (
+        "общее собрание",
+        "собрание собственников",
+        "повестка",
+        "голосование",
+        "внеочередное общее собрание",
+    )
+
+    has_strong_meeting_markers = _contains_any(normalized, strong_meeting_markers)
+
+    if _contains_any(normalized, ("жилкомсервис", " жкс", "управляющая организация")) and not has_strong_meeting_markers:
         return "housing_management_document"
 
     if _contains_any(normalized, ("мчс", "пожар", "эвакуац")):
@@ -46,7 +57,7 @@ def classify_document(text: str) -> str:
     ):
         return "voting_ballot"
 
-    if _contains_any(normalized, ("общее собрание", "повестка", "голосование")):
+    if has_strong_meeting_markers:
         return "meeting_notice"
 
     if _contains_any(normalized, ("рассмотрев обращение", "сообщаем", "на ваше обращение")):
@@ -71,7 +82,8 @@ def _build_title(normalized: str, document_type: str) -> str:
     if not normalized:
         return "Без названия"
 
-    first_sentence = re.split(r"[.!?]\s+", normalized, maxsplit=1)[0].strip(" -:;")
+    title_source = _LEADING_PAGE_MARKER_RE.sub("", normalized, count=1).lstrip(" -:;")
+    first_sentence = re.split(r"[.!?]\s+", title_source, maxsplit=1)[0].strip(" -:;")
     if first_sentence:
         return first_sentence[:120]
 
