@@ -26,8 +26,24 @@ def test_housing_management_document_without_meeting_markers() -> None:
 
 
 def test_voting_ballot_classified_correctly() -> None:
-    text = "Бланк решения собственника: голосование по вопросам. Варианты: за, против, воздержался."
+    text = """
+    Бланк решения собственника помещения.
+    Собственник: Иванов И.И. Паспорт: 4000 123456. СНИЛС: 123-456-789 00.
+    Вопрос №1: Утвердить тариф? За / Против / Воздержался.
+    Вопрос №2: Выбрать совет дома? За / Против / Воздержался.
+    Подпись собственника: _____________
+    """
     assert classify_document(text) == "voting_ballot"
+
+
+def test_meeting_notice_with_vote_options_is_not_ballot_regression() -> None:
+    text = """
+    СООБЩЕНИЕ о проведении внеочередного Общего собрания собственников помещений.
+    Форма проведения общего собрания: очно-заочная.
+    Повестка дня: 1. Выбор председателя собрания. 2. Утверждение тарифа.
+    По каждому вопросу в бланке можно выбрать: ЗА / ПРОТИВ / ВОЗДЕРЖАЛСЯ.
+    """
+    assert classify_document(text) == "meeting_notice"
 
 
 def test_meeting_notice_takes_precedence_over_contract_with_strong_markers() -> None:

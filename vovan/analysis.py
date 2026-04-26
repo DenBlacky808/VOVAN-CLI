@@ -40,29 +40,51 @@ def classify_document(text: str) -> str:
     if _contains_any(normalized, ("исковое заявление", "определение суда", "решение суда", "суд ", " арбитраж")):
         return "court_document"
 
-    strong_meeting_markers = (
+    strong_notice_markers = (
+        "сообщение",
         "сообщение о проведении",
-        "общее собрание",
-        "внеочередное общее собрание",
-        "собрание собственников",
-        "повестка",
-        "голосование",
-        "очно-заочное голосование",
+        "внеочередного общего собрания",
+        "общее собрание собственников",
+        "повестка дня",
+        "форма проведения общего собрания",
     )
-    strong_meeting_markers_count = sum(1 for marker in strong_meeting_markers if marker in normalized)
-    has_strong_meeting_notice = (
-        "внеочередное общее собрание" in normalized
-        or ("сообщение о проведении" in normalized and ("собрание" in normalized or "голосован" in normalized))
-        or strong_meeting_markers_count >= 2
+    notice_markers_count = sum(1 for marker in strong_notice_markers if marker in normalized)
+    has_strong_meeting_notice = notice_markers_count >= 2 or _contains_any(
+        normalized,
+        (
+            "сообщение о проведении",
+            "внеочередного общего собрания",
+            "общее собрание собственников",
+        ),
     )
 
-    has_ballot_header = "бланк решения" in normalized
+    has_ballot_header = _contains_any(
+        normalized,
+        (
+            "бланк решения",
+            "решение собственника",
+            "решение собственника помещения",
+        ),
+    )
+    has_owner_fields = _contains_any(
+        normalized,
+        (
+            "собственник",
+            "паспорт",
+            "снилс",
+            "подпись",
+        ),
+    )
     has_vote_options = all(_contains_word(normalized, option) for option in ("за", "против", "воздержался"))
-    if (has_ballot_header or has_vote_options) and ("голос" in normalized or "собра" in normalized):
-        return "voting_ballot"
+    question_markers_count = len(re.findall(r"(?:вопрос\s*№?\s*\d+)|(?:\d+[).]\s*вопрос)", normalized))
+    repeated_answer_fields = has_vote_options and question_markers_count >= 2
+    has_strong_ballot = has_ballot_header or (has_owner_fields and repeated_answer_fields)
 
-    if has_strong_meeting_notice:
+    if has_strong_meeting_notice and not has_strong_ballot:
         return "meeting_notice"
+
+    if has_strong_ballot:
+        return "voting_ballot"
 
     if _contains_any(normalized, ("договор", "стороны", "предмет договора", "соглашение")):
         return "contract_or_agreement"
