@@ -41,6 +41,18 @@ class VladcherApiClient:
         with request.urlopen(req) as resp:  # noqa: S310
             return json.loads(resp.read().decode("utf-8"))
 
+    def _request_bytes(self, method: str, path: str) -> bytes:
+        req = request.Request(
+            self._build_url(path),
+            method=method,
+            headers={
+                "Authorization": f"Bearer {self.worker_token}",
+                "Accept": "*/*",
+            },
+        )
+        with request.urlopen(req) as resp:  # noqa: S310
+            return resp.read()
+
     @staticmethod
     def _parse_claim_response(response: dict) -> dict | None:
         if response.get("ok") is not True:
@@ -61,9 +73,11 @@ class VladcherApiClient:
             return response
         return self._parse_claim_response(response)
 
-    def download_job_file(self, job_id: str) -> dict:
+    def download_job_file(self, job_id: str) -> dict | bytes:
         path = f"/api/vovan/ocr/jobs/{job_id}/download/"
-        return self._request_json("GET", path)
+        if self.dry_run:
+            return self._request_json("GET", path)
+        return self._request_bytes("GET", path)
 
     def submit_result(self, job_id: str, result_text: str) -> dict:
         path = f"/api/vovan/ocr/jobs/{job_id}/complete/"
