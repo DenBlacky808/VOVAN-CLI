@@ -6,7 +6,7 @@ import platform
 import sys
 
 from vovan.config import load_settings, validate_required_env
-from vovan.ocr import run_placeholder_ocr
+from vovan.ocr import run_ocr
 from vovan.preflight import run_preflight
 from vovan.report import write_report
 from vovan.worker import list_jobs, run_worker
@@ -28,6 +28,7 @@ def cmd_doctor() -> int:
         "log_dir": str(settings.log_dir),
         "log_dir_exists": settings.log_dir.exists(),
         "ready": len(missing) == 0,
+        "ocr_engine": settings.ocr_engine,
     }
     print(json.dumps(result, ensure_ascii=False, indent=2))
     write_report(settings, "doctor", result)
@@ -49,7 +50,8 @@ def cmd_ocr(path: str) -> int:
         print(json.dumps({"status": "error", "message": "File is not suitable for OCR", "preflight": preflight}, ensure_ascii=False, indent=2))
         return 1
 
-    result = run_placeholder_ocr(path)
+    result = run_ocr(path, settings.ocr_engine)
+    result["ocr_engine"] = result.get("engine")
     print(json.dumps(result, ensure_ascii=False, indent=2))
     write_report(settings, "ocr", {"preflight": preflight, "ocr": result})
     return 0
@@ -64,6 +66,8 @@ def cmd_worker(worker_mode: str | None = None, once: bool = False) -> int:
     result = run_worker(settings)
     if once:
         result["once"] = True
+    if "ocr_engine" not in result:
+        result["ocr_engine"] = settings.ocr_engine
     print(json.dumps(result, ensure_ascii=False, indent=2))
     write_report(settings, "worker", result)
     return 0 if result.get("status") == "ok" else 1
