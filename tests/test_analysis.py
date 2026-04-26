@@ -30,6 +30,31 @@ def test_voting_ballot_classified_correctly() -> None:
     assert classify_document(text) == "voting_ballot"
 
 
+def test_meeting_notice_with_vote_options_is_not_ballot_regression() -> None:
+    text = """
+    СООБЩЕНИЕ о проведении внеочередного Общего собрания собственников помещений.
+    Форма проведения общего собрания: очно-заочная.
+    Повестка дня:
+    1. Выбор председателя собрания.
+    2. Утверждение тарифа.
+    Варианты голосования по вопросам: ЗА / ПРОТИВ / ВОЗДЕРЖАЛСЯ.
+    """
+    assert classify_document(text) == "meeting_notice"
+
+
+def test_ballot_like_text_with_owner_fields_and_repeated_questions() -> None:
+    text = """
+    Решение собственника помещения по вопросам повестки общего собрания.
+    Собственник: Иванов Иван Иванович.
+    Паспорт: 4000 123456.
+    СНИЛС: 123-456-789 00.
+    Подпись: ____________.
+    Вопрос №1: Утвердить председателя. За / Против / Воздержался.
+    Вопрос №2: Утвердить тариф. За / Против / Воздержался.
+    """
+    assert classify_document(text) == "voting_ballot"
+
+
 def test_meeting_notice_takes_precedence_over_contract_with_strong_markers() -> None:
     text = """
     Сообщение о проведении внеочередного Общего собрания собственников помещений.
