@@ -20,6 +20,8 @@ class Settings:
     tesseract_lang: str = "eng"
     pdf_max_pages: int = 3
     pdf_dpi: int = 200
+    worker_poll_seconds: float = 5.0
+    worker_error_backoff_seconds: float = 15.0
 
 
 def _to_bool(value: str) -> bool:
@@ -61,6 +63,8 @@ def load_settings(env_file: str = ".env") -> Settings:
         tesseract_lang=os.getenv("VOVAN_TESSERACT_LANG", "eng").strip() or "eng",
         pdf_max_pages=int(os.getenv("VOVAN_PDF_MAX_PAGES", "3")),
         pdf_dpi=int(os.getenv("VOVAN_PDF_DPI", "200")),
+        worker_poll_seconds=float(os.getenv("VOVAN_WORKER_POLL_SECONDS", "5")),
+        worker_error_backoff_seconds=float(os.getenv("VOVAN_WORKER_ERROR_BACKOFF_SECONDS", "15")),
     )
 
 

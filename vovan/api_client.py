@@ -79,14 +79,22 @@ class VladcherApiClient:
             return self._request_json("GET", path)
         return self._request_bytes("GET", path)
 
-    def submit_result(self, job_id: str, result_text: str) -> dict:
+    def submit_result(self, job_id: str, result_text: str | dict) -> dict:
         path = f"/api/vovan/ocr/jobs/{job_id}/complete/"
-        payload = {"result_text": result_text}
+        if isinstance(result_text, dict):
+            payload = dict(result_text)
+            payload.setdefault("result_text", payload.get("extracted_text", ""))
+        else:
+            payload = {"result_text": result_text}
         return self._request_json("POST", path, payload)
 
-    def submit_failure(self, job_id: str, error_message: str) -> dict:
+    def submit_failure(self, job_id: str, error_message: str | dict) -> dict:
         path = f"/api/vovan/ocr/jobs/{job_id}/fail/"
-        payload = {"error_message": error_message}
+        if isinstance(error_message, dict):
+            payload = dict(error_message)
+            payload.setdefault("error_message", payload.get("safe_error", "Worker failed safely"))
+        else:
+            payload = {"error_message": error_message}
         return self._request_json("POST", path, payload)
 
     def get_job_status(self, job_id: str) -> dict:

@@ -9,7 +9,7 @@ from vovan.config import load_settings, validate_required_env
 from vovan.ocr import _is_tesseract_available, list_tesseract_languages, run_ocr
 from vovan.preflight import run_preflight
 from vovan.report import write_report
-from vovan.worker import list_jobs, run_worker
+from vovan.worker import list_jobs, run_worker, run_worker_loop
 
 
 def cmd_doctor() -> int:
@@ -83,12 +83,17 @@ def cmd_worker(worker_mode: str | None = None, once: bool = False) -> int:
         settings.dry_run = True
     if worker_mode == "live":
         settings.dry_run = False
-    result = run_worker(settings)
+
     if once:
+        result = run_worker(settings)
         result["once"] = True
-    if "ocr_engine" not in result:
-        result["ocr_engine"] = settings.ocr_engine
-    print(json.dumps(result, ensure_ascii=False, indent=2))
+        if "ocr_engine" not in result:
+            result["ocr_engine"] = settings.ocr_engine
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        write_report(settings, "worker", result)
+        return 0 if result.get("status") == "ok" else 1
+
+    result = run_worker_loop(settings)
     write_report(settings, "worker", result)
     return 0 if result.get("status") == "ok" else 1
 

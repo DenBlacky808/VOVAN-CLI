@@ -48,3 +48,42 @@ def test_download_complete_fail_and_status_use_real_endpoints() -> None:
 
     assert status["method"] == "GET"
     assert status["path"] == "/api/vovan/ocr/jobs/42/status/"
+
+
+def test_submit_result_accepts_extended_worker_payload() -> None:
+    client = VladcherApiClient(base_url="https://worker.example", worker_token="t", dry_run=True)
+
+    result = client.submit_result(
+        "42",
+        {
+            "job_id": "42",
+            "status": "completed",
+            "extracted_text": "hello",
+            "page_count": 1,
+            "has_text_layer": True,
+            "processing_warnings": [],
+            "worker_result_summary": "PDF text layer extracted.",
+        },
+    )
+
+    assert result["path"] == "/api/vovan/ocr/jobs/42/complete/"
+    assert result["payload"]["extracted_text"] == "hello"
+    assert result["payload"]["result_text"] == "hello"
+
+
+def test_submit_failure_accepts_safe_worker_payload() -> None:
+    client = VladcherApiClient(base_url="https://worker.example", worker_token="t", dry_run=True)
+
+    result = client.submit_failure(
+        "42",
+        {
+            "job_id": "42",
+            "status": "failed",
+            "safe_error": "PDF preflight failed",
+            "processing_warnings": [],
+        },
+    )
+
+    assert result["path"] == "/api/vovan/ocr/jobs/42/fail/"
+    assert result["payload"]["safe_error"] == "PDF preflight failed"
+    assert result["payload"]["error_message"] == "PDF preflight failed"

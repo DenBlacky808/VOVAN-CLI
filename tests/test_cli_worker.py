@@ -47,3 +47,25 @@ def test_cmd_worker_sets_live_mode(monkeypatch) -> None:
 
     assert exit_code == 0
     assert captured["dry_run"] is False
+
+
+def test_cmd_worker_without_once_runs_loop(monkeypatch) -> None:
+    from vovan import cli as cli_module
+
+    captured = {}
+
+    def fake_load_settings():
+        return _settings()
+
+    def fake_run_worker_loop(settings: Settings):
+        captured["dry_run"] = settings.dry_run
+        return {"status": "ok", "message": "loop stopped"}
+
+    monkeypatch.setattr(cli_module, "load_settings", fake_load_settings)
+    monkeypatch.setattr(cli_module, "run_worker_loop", fake_run_worker_loop)
+    monkeypatch.setattr(cli_module, "write_report", lambda *args, **kwargs: None)
+
+    exit_code = cmd_worker(worker_mode="live", once=False)
+
+    assert exit_code == 0
+    assert captured["dry_run"] is False

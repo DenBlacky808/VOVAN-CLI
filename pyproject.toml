@@ -8,7 +8,9 @@ version = "0.1.0"
 description = "VOVAN local OCR CLI MVP skeleton"
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+  "pypdf"
+]
 
 [project.optional-dependencies]
 dev = [
