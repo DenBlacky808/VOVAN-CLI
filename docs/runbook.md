@@ -28,12 +28,12 @@ make doctor
 make preflight SAMPLE=./data/sample.txt
 ```
 
-## 5) Local image OCR (real Tesseract text)
+## 5) Local file OCR (real Tesseract text)
 
 Установка macOS/Hackintosh:
 
 ```bash
-brew install tesseract
+brew install tesseract poppler
 python3 -m pip install -e ".[dev]"
 ```
 
@@ -49,13 +49,28 @@ python3 -m vovan.local_ocr /path/to/file.png
 vovan-ocr-file /path/to/file.jpg
 ```
 
-Поддерживаемые форматы: `.png`, `.jpg`, `.jpeg`.
+Smoke test для PDF:
+
+```bash
+python3 -m vovan.local_ocr /path/to/file.pdf
+```
+
+С языками и DPI:
+
+```bash
+vovan-ocr-file --lang rus+eng --pdf-dpi 250 /path/to/file.pdf
+```
+
+Поддерживаемые форматы: `.png`, `.jpg`, `.jpeg`, `.pdf`.
 
 Ограничения:
-- PDF здесь не поддерживается.
 - Если `tesseract` не установлен или не найден в `PATH`, команда завершается non-zero.
-- Если OCR вернул пустой текст, команда завершается non-zero с явной ошибкой.
+- Для PDF нужен Poppler `pdftoppm`; если он не найден в `PATH`, команда завершается non-zero с подсказкой `brew install poppler`.
+- PDF конвертируется во временные PNG-страницы, каждая страница OCRится Tesseract, итоговый текст склеивается с разделителями `--- page 1 ---`.
+- Если OCR для PNG/JPG/JPEG вернул пустой текст, команда завершается non-zero с явной ошибкой.
+- Если OCR для PDF-страницы пустой, разделитель страницы сохраняется, а текст страницы становится `[empty OCR output]`.
 - Качество зависит от изображения и установленных language packs.
+- Не коммитьте персональные PDF, сканы, скриншоты или локальные OCR-сэмплы. Для тестов используйте только временные/generated fixtures.
 
 ## 6) Placeholder OCR
 
