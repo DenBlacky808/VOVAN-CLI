@@ -74,6 +74,31 @@ Known limitations:
 - `vovan jobs`
 - `vovan report`
 
+## Terminal worker pipeline
+
+`vovan worker` запускает локальный terminal daemon в pull-mode:
+
+```bash
+vovan worker --live
+```
+
+Для одного прохода без daemon-loop:
+
+```bash
+vovan worker --live --once
+```
+
+Worker использует `VLADCHER_BASE_URL` и `VOVAN_WORKER_TOKEN`, но не печатает их значения. Цикл polling переживает временные API/network ошибки, пишет короткий JSON status log, ждёт `VOVAN_WORKER_POLL_SECONDS` между обычными попытками и `VOVAN_WORKER_ERROR_BACKOFF_SECONDS` после ошибок. `Ctrl+C` завершает daemon чисто.
+
+PDF job в worker сейчас обрабатывается как MVP:
+
+- проверяется PDF header/структура;
+- text layer извлекается через лёгкую зависимость `pypdf`, если он есть;
+- scanned/no-text PDF возвращает controlled placeholder: `PDF accepted; scanned-page OCR is not enabled in MVP`;
+- worker не запускает `pdftoppm`, `tesseract`, `ocrmypdf` или batch OCR для PDF job в этом pipeline.
+
+Расширенный result payload остаётся совместим с текущим complete/fail контрактом: worker отправляет `result_text`/`error_message` и безопасные поля `extracted_text`, `page_count`, `has_text_layer`, `processing_warnings`, `worker_result_summary` или `safe_error`.
+
 ## Fallback без install -e
 
 Если entrypoint `vovan` ещё не установлен (например, без `make install`), используйте module mode:
@@ -90,8 +115,12 @@ python3 -m vovan.cli worker
 - `VOVAN_TESSERACT_LANG=eng` (supports combined values like `rus+eng`)
 - `VOVAN_PDF_MAX_PAGES=3` (for PDF→PNG preprocessing before Tesseract OCR)
 - `VOVAN_PDF_DPI=200` (PDF rasterization DPI for `pdftoppm`)
+- `VOVAN_WORKER_POLL_SECONDS=5`
+- `VOVAN_WORKER_ERROR_BACKOFF_SECONDS=15`
 
 If `pdftoppm` is not available, PDF OCR with `tesseract` safely falls back to placeholder with `engine_warning`.
+
+Note: the terminal worker PDF route intentionally does not use the PDF→PNG/Tesseract stack. That stack is only for the separate local file OCR CLI path and can be wired into worker PDF processing in a later focused PR.
 
 ## Docker Compose
 
