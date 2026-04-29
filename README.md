@@ -135,7 +135,7 @@ Note: the terminal worker PDF route intentionally does not use the PDF→PNG/Tes
 docker compose up --build vovan-worker
 ```
 
-См. `docs/runbook.md`, `docs/architecture.md`, `docs/VOVAN_CLI_RUNTIME_BOUNDARY_RU.md`, `docs/VOVAN_SITE_BRIDGE_BOUNDARY_RU.md` и smoke-checkpoint'ы `docs/smoke/tesseract_image_smoke.md`, `docs/smoke/tesseract_rus_eng_smoke.md`.
+См. `docs/runbook.md`, `docs/architecture.md`, `docs/VOVAN_CLI_RUNTIME_BOUNDARY_RU.md`, `docs/VOVAN_SITE_BRIDGE_BOUNDARY_RU.md`, `docs/VOVAN_SAFETY_LAYER_RU.md` и smoke-checkpoint'ы `docs/smoke/tesseract_image_smoke.md`, `docs/smoke/tesseract_rus_eng_smoke.md`.
 
 ## Live API контракт (VLADCHER_ru worker API)
 
