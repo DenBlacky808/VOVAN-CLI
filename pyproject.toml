@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "vovan"
 version = "0.1.0"
-description = "VOVAN local OCR CLI MVP skeleton"
+description = "VOVAN portable local compute executor CLI with OCR as the first module"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
